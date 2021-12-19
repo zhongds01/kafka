@@ -6,7 +6,7 @@
 
 在以上地址下载kafka安装包，安装完成后传到环境上解压即可。如果没有安装jdk，需要先安装jdk。
 
-![image-20211219160640186](images\image-20211219160640186.png) 
+![image-20211219160640186](./images/image-20211219160640186.png) 
 
 解压完成后如下
 
@@ -43,7 +43,7 @@ kill -9 ${pid}
 
 zookeeper与kafka全部启动完成后，可以进入zookeeper中查看kafka节点信息。
 
-![image-20211219164141317](images\image-20211219164141317.png) 
+![image-20211219164141317](./images/image-20211219164141317.png) 
 
 # 2、kafka基础
 
