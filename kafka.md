@@ -6,11 +6,11 @@
 
 在以上地址下载kafka安装包，安装完成后传到环境上解压即可。如果没有安装jdk，需要先安装jdk。
 
-![image-20211219160640186](D:\GitHubCode\kafka\images\image-20211219160640186.png) 
+![image-20211219160640186](images\image-20211219160640186.png) 
 
 解压完成后如下
 
-![image-20211219161004473](D:\GitHubCode\kafka\images\image-20211219161004473.png) 
+![image-20211219161004473](images\image-20211219161004473.png) 
 
 ## 1.2、kafka配置文件
 
@@ -43,7 +43,7 @@ kill -9 ${pid}
 
 zookeeper与kafka全部启动完成后，可以进入zookeeper中查看kafka节点信息。
 
-![image-20211219164141317](D:\GitHubCode\kafka\images\image-20211219164141317.png) 
+![image-20211219164141317](images\image-20211219164141317.png) 
 
 # 2、kafka基础
 
@@ -146,7 +146,7 @@ ls /brokers/topics
 >hello topic
 ```
 
-![image-20211219173000000](D:\GitHubCode\kafka\images\image-20211219173000000.png) 
+![image-20211219173000000](images\image-20211219173000000.png) 
 
 ## 2.4、消息消费
 
@@ -160,7 +160,7 @@ ls /brokers/topics
 ./kafka-console-consumer.sh --bootstrap-server 192.168.1.118:9092 --topic test-topic
 ```
 
-![image-20211219173344020](D:\GitHubCode\kafka\images\image-20211219173344020.png) 
+![image-20211219173344020](images\image-20211219173344020.png) 
 
 打开消费者客户端后会发现啥也没有，这时再在生产者客户端侧发送一条消息hello consumer，发现消费者客户端会接收到消息并消费掉。
 
@@ -174,7 +174,7 @@ ls /brokers/topics
 
 就会消费所有的消息，包括之前的。
 
-![image-20211219173903699](D:\GitHubCode\kafka\images\image-20211219173903699.png) 
+![image-20211219173903699](images\image-20211219173903699.png) 
 
 
 
