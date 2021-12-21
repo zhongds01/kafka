@@ -54,7 +54,7 @@ zookeeper与kafka全部启动完成后，可以进入zookeeper中查看kafka节�
 | 名称          | 说明                                                         |
 | ------------- | ------------------------------------------------------------ |
 | Broker        | Kafka集群中的一台或多台服务器统称broker.                     |
-| Topic         | Kafka会依据topic对不同的消息进行分类。每条消息都需要指定一个topic |
+| Topic         | Kafka会依据topic对不同的消息进行分类。每条消息都需要指定一个topic。每个topic会在kafka日志目录下生成一个或多个（多partition下）目录用于存放消息内容 |
 | Producer      | 消息生产者，向Broker中发送消息的客户端                       |
 | Consumer      | 消息消费者，向Broker中读取消息的客户端                       |
 | ConsumerGroup | 消费者组，可以并行消费Topic中的partition的消息               |
@@ -140,7 +140,8 @@ ls /brokers/topics
 
 ```shell
 # 打开生产者客户端
-./kafka-console-producer.sh --broker-list 192.168.1.118:9092 --topic test-topic
+./kafka-console-producer.sh --broker-list 192.168.1.118:9092 --topic test-topic #kafka_2.12-2.4.1版本
+./kafka-console-producer.sh --bootstrap-server 192.168.1.118:9092 --topic test-topic #kafka新版本
 # 发送两条消息
 >hello world
 >hello topic
@@ -166,7 +167,7 @@ ls /brokers/topics
 
 如果打开消费者客户端时指定以下参数
 
---from-beginning：从头开始消费
+**--from-beginning：从头开始消费**
 
 ```shell
 ./kafka-console-consumer.sh --bootstrap-server 192.168.1.118:9092 --from-beginning --topic test-topic
@@ -176,21 +177,46 @@ ls /brokers/topics
 
 ![image-20211219173903699](images\image-20211219173903699.png) 
 
+小总结：
 
+使用命令行开启消费者客户端时，如果不指定从头开始消费，那么当前组会按当前topic中最后一条消息的偏移量+1进行消费。
 
-# 4、kafka组
+如果指定从头开始消费，当前组会从头开始消费该topic中的消息（重复消费）
+
+消息保存在borker服务器上的日志目录下
 
 ```shell
-
-
-# topic
-
-# 查看topic
-
-# 生产者生产消息
-./kafka-console-producer.sh --broker-list localhost:9092 --topic quickstart-events  #kafka_2.12-2.4.1版本
-./bin/kafka-console-producer.sh --bootstrap-server localhost:9092 --topic quickstart-events #kafka新版本
-# 消费者消费消息
-./kafka-console-consumer.sh --bootstrap-server localhost:9092 --from-beginning --topic quickstart-events
+/tmp/kafka-logs/主题-分区/00000000.log
 ```
 
+同一主题-分区下的消息保存是有顺序，通过offset指定每条消息的顺序。先发送的消息先消费。可通过指定offset消费指定位置的消息
+
+// todo图片
+
+## 2.5、消息类型
+
+### 2.5.1、单播消息
+
+一个消费组订阅一个topic，如果这个**消费组**下有多个消费者，只能有一个消费者能消费该topic中的消息。也就是一个消费组中只能有一个消费者消费topic中的消息
+
+### 2.5.2、多播消息
+
+不同消费组订阅相同的topic，每个消费组都可以消费topic中的消息，且每个消费组中只能有一个消费者消费。
+
+# 4、kafka消费组
+
+```shell
+# 查看当前topic下有哪些消费组
+./kafka-consumer-groups.sh --bootstrap-server 192.168.1.118:9092 --list
+# 查看某个消费组的详细信息
+./kafka-consumer-groups.sh --bootstrap-server 192.168.1.118:9092 --describe --group ${gropuName}
+```
+
+// todo图片
+
+重点：
+
+- current-offset:当前消息消费的偏移量（最近消费到哪一条消息）
+
+- log-end-offset:消息总量
+- lag：还剩多少消息未消费
