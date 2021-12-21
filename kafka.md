@@ -147,7 +147,7 @@ ls /brokers/topics
 >hello topic
 ```
 
-![image-20211219173000000](images\image-20211219173000000.png) 
+![image-20211219173000000](./images/image-20211219173000000.png) 
 
 ## 2.4、消息消费
 
@@ -161,7 +161,7 @@ ls /brokers/topics
 ./kafka-console-consumer.sh --bootstrap-server 192.168.1.118:9092 --topic test-topic
 ```
 
-![image-20211219173344020](images\image-20211219173344020.png) 
+![image-20211219173344020](./images/image-20211219173344020.png) 
 
 打开消费者客户端后会发现啥也没有，这时再在生产者客户端侧发送一条消息hello consumer，发现消费者客户端会接收到消息并消费掉。
 
@@ -175,7 +175,7 @@ ls /brokers/topics
 
 就会消费所有的消息，包括之前的。
 
-![image-20211219173903699](images\image-20211219173903699.png) 
+![image-20211219173903699](./images/image-20211219173903699.png) 
 
 小总结：
 
