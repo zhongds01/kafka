@@ -43,6 +43,10 @@ kill -9 ${pid}
 
 zookeeper与kafka全部启动完成后，可以进入zookeeper中查看kafka节点信息。
 
+```shell
+./zookeeper-shell.sh 192.168.1.118:2181
+```
+
 ![image-20211219164141317](./images/image-20211219164141317.png) 
 
 # 2、kafka基础
@@ -127,7 +131,8 @@ ls /brokers/topics
 --topic：topic名称
 
 ```shell
-./bin/kafka-topics.sh --bootstrap-server localhost:9092 --describe --topic test-topic
+./kafka-topics.sh --zookeeper localhost:2181 --describe --topic test-topic
+# ./kafka-topics.sh --bootstrap-server localhost:9092 --describe --topic test-topic
 ```
 
 ## 2.3、消息生产
@@ -177,6 +182,10 @@ ls /brokers/topics
 
 ![image-20211219173903699](./images/image-20211219173903699.png) 
 
+如果再开启一个消费者客户端，和之前的消费者客户端订阅一样的topic，则两个消费者都可以消费消息（类似多播）
+
+![image-20220103151044173](images\image-20220103151044173.png)
+
 小总结：
 
 使用命令行开启消费者客户端时，如果不指定从头开始消费，那么当前组会按当前topic中最后一条消息的偏移量+1进行消费。
@@ -199,11 +208,80 @@ ls /brokers/topics
 
 一个消费组订阅一个topic，如果这个**消费组**下有多个消费者，只能有一个消费者能消费该topic中的消息。也就是一个消费组中只能有一个消费者消费topic中的消息
 
+```shell
+# 创建生产者
+./kafka-console-producer.sh --broker-list 192.168.1.118:9092 --topic test-topic
+# 创建带消费组的消费者1，该消费者在testGroup组下
+./kafka-console-consumer.sh --bootstrap-server 192.168.1.118:9092 --consumer-property group.id=testGroup --topic test-topic
+# 创建带消费组的消费者2，该消费者也在testGroup组下
+./kafka-console-consumer.sh --bootstrap-server 192.168.1.118:9092 --consumer-property group.id=testGroup --topic test-topic
+```
+
+消费结果：
+
+- 生产者在test-topic中生产一条消息groupHello
+
+  ![image-20220103152848247](images\image-20220103152848247.png)
+
+- 先启动消费者1，消费者1会正常消费groupHello
+
+  ![image-20220103152310333](images\image-20220103152310333.png)
+
+- 再启动消费者2，且生产者再次往test-topic中生产一条消息groupHello1，会发现消费者1不会再消费groupHello1，而后创建的消费者2会消费groupHello1。
+
+  ![image-20220103152911578](images\image-20220103152911578.png)
+
+  ![image-20220103152348239](D:\GitHubCode\kafka\images\image-20220103152348239.png)
+
+- 此时有两个消费者，分别是消费者1和2。生产者再次往test-topic中生产一条消息groupHello2，消费者1和2中仍然只能有一个能消费groupHello2。
+
+  ![image-20220103153052244](images\image-20220103153052244.png)
+
+  ![image-20220103152606488](images\image-20220103152606488.png)
+
+以上就是单播消息的简单实现。
+
 ### 2.5.2、多播消息
 
 不同消费组订阅相同的topic，每个消费组都可以消费topic中的消息，且每个消费组中只能有一个消费者消费。
 
-# 4、kafka消费组
+- 结合已有的消费组testGroup下的两个消费者。再创建消费组testGroup1下的两个消费者。一共是两个消费组，四个消费者。
+
+```shell
+# 创建带消费组的消费者1，该消费者在testGroup1组下
+./kafka-console-consumer.sh --bootstrap-server 192.168.1.118:9092 --consumer-property group.id=testGroup1 --topic test-topic
+# 创建带消费组的消费者2，该消费者也在testGroup1组下
+./kafka-console-consumer.sh --bootstrap-server 192.168.1.118:9092 --consumer-property group.id=testGroup1 --topic test-topic
+```
+
+- 启动testGroup1下的消费者后，生产者往test-topic中生产一条消息groupHello3。则testGroup下的某一个消费者和testGroup1下的某一个消费者都会消费groupHello3
+
+![image-20220103160427962](images\image-20220103160427962.png)
+
+![image-20220103160843176](images\image-20220103160843176.png)
+
+- 多播实现图：
+
+![image-20220103160115355](images\image-20220103160115355.png)
+
+## 2.6、分区partition
+
+- 分区是将一个topic拆分为多个子topic。每个子topic都有自己的存放消息目录。
+
+  - 如果默认不设置分区，就只有一个topic。存放消息的topic名称为${topic-name}-0
+  - 如果设置分区，假设设置了三个分区，就会生成三个存放消息的目录。分别为${topic-name}-0，${topic-name}-1，${topic-name}-2
+
+- 创建带分区的topic，同时需要指定副本replication
+
+  ```shell
+  ./kafka-topics.sh --zookeeper 192.168.1.118:2181 --create --topic test-topic --partitions 1 --replication-factor 1
+  ```
+
+## 2.7、副本replication
+
+- 副本是所有topic分区的备份。
+
+# 3、kafka消费组
 
 ```shell
 # 查看当前topic下有哪些消费组
@@ -212,11 +290,28 @@ ls /brokers/topics
 ./kafka-consumer-groups.sh --bootstrap-server 192.168.1.118:9092 --describe --group ${gropuName}
 ```
 
-// todo图片
+> 消费组详细信息查看
 
-重点：
+![image-20220103162433712](images\image-20220103162433712.png)
 
-- current-offset:当前消息消费的偏移量（最近消费到哪一条消息）
+- current-offset:当前消息消费的偏移量（最近最后一次消费到哪一条消息）
 
 - log-end-offset:消息总量
 - lag：还剩多少消息未消费
+- 两个消费组对比
+
+![image-20220103162935374](C:\Users\zhongdongsheng\AppData\Roaming\Typora\typora-user-images\image-20220103162935374.png)
+
+# 4、伪集群搭建
+
+> 复制一份server.properties。修改以下配置
+
+```properties
+broker.id=1
+listeners=PLAINTEXT://192.168.1.118:9093
+log.dirs=/tmp/kafka-logs/9093
+```
+
+> 使用当前配置文件启动kafka，启动成功后，kafka集群搭建完成。
+
+![image-20220103194650220](images\image-20220103194650220.png) 
